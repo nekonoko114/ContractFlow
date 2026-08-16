@@ -18,7 +18,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.4'
           extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, bcmath, curl
           coverage: none
 
@@ -65,17 +65,26 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             
+            # PHP バイナリの自動検出
+            if [ -f /usr/local/php/8.4/bin/php ]; then
+              PHP_BIN="/usr/local/php/8.4/bin/php"
+            elif [ -f /usr/local/php/8.3/bin/php ]; then
+              PHP_BIN="/usr/local/php/8.3/bin/php"
+            else
+              PHP_BIN="php"
+            fi
+            
             # パーミッション設定
             chmod -R 777 storage bootstrap/cache
             
             # ストレージシンボリックリンク作成
-            php -d memory_limit=512M artisan storage:link || true
+            $PHP_BIN -d memory_limit=512M artisan storage:link || true
             
             # データベースマイグレーション
-            php -d memory_limit=512M artisan migrate --force
+            $PHP_BIN -d memory_limit=512M artisan migrate --force
             
             # 本番用キャッシュ作成
-            php -d memory_limit=512M artisan optimize:clear
-            php -d memory_limit=512M artisan config:cache
-            php -d memory_limit=512M artisan route:cache
-            php -d memory_limit=512M artisan view:cache
+            $PHP_BIN -d memory_limit=512M artisan optimize:clear
+            $PHP_BIN -d memory_limit=512M artisan config:cache
+            $PHP_BIN -d memory_limit=512M artisan route:cache
+            $PHP_BIN -d memory_limit=512M artisan view:cache
