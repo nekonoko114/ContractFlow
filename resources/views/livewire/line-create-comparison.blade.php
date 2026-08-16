@@ -48,42 +48,58 @@
                         <h2 class="text-sm sm:text-base font-bold text-[#131b2e]">1. 携帯電話会社の選択</h2>
                     </div>
 
-                    <!-- Carrier Quick Selector Pills (Responsive Grid) -->
-                    <div class="space-y-2">
-                        <label class="text-xs font-bold text-[#505f76]">主要キャリアから素早く選択</label>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-2.5">
-                            @foreach ($carriers as $c)
-                                <button type="button" 
-                                        wire:click="selectCarrier({{ $c->id }})"
-                                        class="p-2.5 sm:p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1 cursor-pointer {{ $carrier_id === $c->id ? 'bg-[#eaedff] border-[#3525cd] ring-2 ring-[#3525cd]/20 shadow-xs' : 'bg-[#faf8ff]/70 border-[#c7c4d8]/50 hover:bg-[#f2f3ff]' }}">
-                                    <div class="flex justify-between items-center">
-                                        <span class="font-bold text-xs text-[#131b2e] truncate">{{ $c->name }}</span>
-                                        <span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold {{ $c->type === 'MNO' ? 'bg-[#3525cd] text-white' : ($c->type === 'サブブランド' ? 'bg-sky-100 text-sky-800' : 'bg-emerald-100 text-emerald-800') }}">
-                                            {{ $c->type }}
-                                        </span>
-                                    </div>
-                                    <span class="text-[10px] text-[#777587]">安全: 約{{ $c->safe_period_days ?? 180 }}日</span>
-                                </button>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <!-- Carrier Custom Name Input if 'Other' -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Carrier Dropdown Selection -->
                         <div class="space-y-1.5">
-                            <label class="text-xs font-bold text-[#464555]">会社名（選択または手動入力） *</label>
-                            <input wire:model.live="carrier_name" type="text" placeholder="例: ahamo, UQ mobile, IIJmio" required
-                                   class="w-full px-3.5 py-2.5 sm:py-3 bg-[#faf8ff] border border-[#c7c4d8]/70 rounded-2xl text-xs sm:text-sm text-[#131b2e] focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd]">
+                            <label class="text-xs font-bold text-[#464555]">携帯会社名 (ドロップダウン選択) *</label>
+                            <div class="relative">
+                                <select wire:model.live="carrier_name" required
+                                        class="w-full px-3.5 py-2.5 sm:py-3 bg-white border border-[#c7c4d8]/70 rounded-2xl text-xs sm:text-sm text-[#131b2e] font-semibold focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] cursor-pointer">
+                                    <option value="">-- 携帯会社を選択してください --</option>
+                                    
+                                    <optgroup label="主要大手キャリア (MNO)">
+                                        @foreach ($carriers->where('type', 'MNO') as $c)
+                                            <option value="{{ $c->name }}">{{ $c->name }} (安全目安: {{ $c->safe_period_days ?? 180 }}日)</option>
+                                        @endforeach
+                                    </optgroup>
+
+                                    <optgroup label="サブブランド・オンライン専用">
+                                        @foreach ($carriers->whereIn('type', ['サブブランド', 'オンライン専用', 'Online', 'SubBrand']) as $c)
+                                            <option value="{{ $c->name }}">{{ $c->name }} (安全目安: {{ $c->safe_period_days ?? 180 }}日)</option>
+                                        @endforeach
+                                    </optgroup>
+
+                                    <optgroup label="格安SIM (MVNO)">
+                                        @foreach ($carriers->where('type', 'MVNO') as $c)
+                                            <option value="{{ $c->name }}">{{ $c->name }} (安全目安: {{ $c->safe_period_days ?? 90 }}日)</option>
+                                        @endforeach
+                                    </optgroup>
+
+                                    <optgroup label="その他">
+                                        <option value="その他">その他（自由入力）</option>
+                                    </optgroup>
+                                </select>
+                            </div>
                             @error('carrier_name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
 
+                        <!-- Plan Name -->
                         <div class="space-y-1.5">
                             <label class="text-xs font-bold text-[#464555]">料金プラン名</label>
-                            <input wire:model="plan_name" type="text" placeholder="例: シンプル2 M, コミコミプラン+"
+                            <input wire:model="plan_name" type="text" placeholder="例: シンプル2 M, コミコミプラン+, ahamo 30GB"
                                    class="w-full px-3.5 py-2.5 sm:py-3 bg-[#faf8ff] border border-[#c7c4d8]/70 rounded-2xl text-xs sm:text-sm text-[#131b2e] focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd]">
                             @error('plan_name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                     </div>
+
+                    <!-- Custom carrier name text input if "その他" is selected -->
+                    @if ($carrier_name === 'その他' || ($carrier_name && !$carriers->contains('name', $carrier_name)))
+                        <div class="p-3 bg-[#f2f3ff] rounded-2xl border border-[#dae2fd] space-y-1.5 animate-in fade-in duration-150">
+                            <label class="text-xs font-bold text-[#3525cd]">会社名を直接入力してください</label>
+                            <input wire:model.live="carrier_name" type="text" placeholder="例: 楽天Turbo, ひかり電話SIMなど"
+                                   class="w-full px-3.5 py-2 bg-white border border-[#c7c4d8]/70 rounded-xl text-xs sm:text-sm text-[#131b2e]">
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Section 2: Pricing & Capacity -->

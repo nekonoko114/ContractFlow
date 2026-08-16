@@ -88,6 +88,25 @@ class LineCreateComparison extends Component
         }
     }
 
+    public function updatedCarrierId(mixed $value): void
+    {
+        if (!empty($value)) {
+            $carrier = Carrier::find($value);
+            if ($carrier) {
+                $this->carrier_name = $carrier->name;
+            }
+        }
+    }
+
+    public function selectCarrier(int $carrierId): void
+    {
+        $carrier = Carrier::find($carrierId);
+        if ($carrier) {
+            $this->carrier_id = $carrier->id;
+            $this->carrier_name = $carrier->name;
+        }
+    }
+
     public function selectDataCapacity(float $capacity): void
     {
         $this->data_capacity = $capacity;

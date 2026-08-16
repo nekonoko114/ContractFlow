@@ -39,17 +39,17 @@
                 </button>
             </div>
 
-            <!-- View Mode Switcher -->
-            <div class="inline-flex items-center bg-[#f2f3ff] p-1 rounded-2xl border border-[#dae2fd]">
+            <!-- View Mode Switcher (Desktop & Tablet only) -->
+            <div class="hidden md:inline-flex items-center bg-[#f2f3ff] p-1 rounded-2xl border border-[#dae2fd]">
                 <button wire:click="$set('viewMode', 'table')" 
-                        class="flex items-center gap-1 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition-all cursor-pointer {{ $viewMode === 'table' ? 'bg-white text-[#3525cd] shadow-xs' : 'text-[#505f76] hover:text-[#131b2e]' }}">
+                        class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer {{ $viewMode === 'table' ? 'bg-white text-[#3525cd] shadow-xs' : 'text-[#505f76] hover:text-[#131b2e]' }}">
                     <span class="material-symbols-outlined text-[17px]">table_rows</span>
-                    <span class="hidden xs:inline">テーブル</span>
+                    <span>テーブル</span>
                 </button>
                 <button wire:click="$set('viewMode', 'grid')" 
-                        class="flex items-center gap-1 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition-all cursor-pointer {{ $viewMode === 'grid' ? 'bg-white text-[#3525cd] shadow-xs' : 'text-[#505f76] hover:text-[#131b2e]' }}">
+                        class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer {{ $viewMode === 'grid' ? 'bg-white text-[#3525cd] shadow-xs' : 'text-[#505f76] hover:text-[#131b2e]' }}">
                     <span class="material-symbols-outlined text-[17px]">grid_view</span>
-                    <span class="hidden xs:inline">カード</span>
+                    <span>カード</span>
                 </button>
             </div>
 
@@ -336,314 +336,431 @@
                 </div>
             @endif
         @else
-            <!-- VIEW MODE 1: Spacious Table View (Desktop & Tablet with Horizontal Scroll Indicator) -->
-            @if ($viewMode === 'table')
-                <div class="bg-white border border-[#c7c4d8]/40 rounded-3xl shadow-xs overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse min-w-[1000px] sm:min-w-[1100px] lg:min-w-[1200px]">
-                            <thead>
-                                <tr class="border-b border-[#c7c4d8]/30 bg-[#faf8ff] text-[11px] font-bold text-[#505f76] uppercase tracking-wider">
-                                    <th class="py-3.5 sm:py-4 px-4 sm:px-6">回線名・電話番号</th>
-                                    <th class="py-3.5 sm:py-4 px-4 sm:px-6">携帯会社 / プラン</th>
-                                    <th class="py-3.5 sm:py-4 px-4 sm:px-6">月額料金 / 容量</th>
-                                    <th class="py-3.5 sm:py-4 px-4 sm:px-6">契約名義人 / 使用者</th>
-                                    <th class="py-3.5 sm:py-4 px-4 sm:px-6">利用期間 & 安全維持メーター</th>
-                                    <th class="py-3.5 sm:py-4 px-4 sm:px-6 text-center">乗り換え歴</th>
-                                    <th class="py-3.5 sm:py-4 px-4 sm:px-6">暗証番号 (PIN)</th>
-                                    <th class="py-3.5 sm:py-4 px-4 sm:px-6 text-center">状態</th>
-                                    <th class="py-3.5 sm:py-4 px-4 sm:px-6 text-right">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-[#c7c4d8]/20 text-xs sm:text-sm">
-                                @foreach ($lines as $line)
-                                    <tr class="hover:bg-[#f8faff] transition-colors group">
-                                        <!-- Line Name & Phone -->
-                                        <td class="py-4 sm:py-5 px-4 sm:px-6 whitespace-nowrap">
-                                            <div class="font-bold text-xs sm:text-sm text-[#131b2e] group-hover:text-[#3525cd] transition-colors">
-                                                {{ $line->line_name }}
-                                            </div>
-                                            <div class="text-[11px] sm:text-xs text-[#505f76] font-mono tracking-wider mt-1 flex items-center gap-1.5">
-                                                <span class="material-symbols-outlined text-[14px] sm:text-[15px] text-[#777587]">call</span>
-                                                <span>{{ $line->phone_number ?? '番号未登録' }}</span>
-                                            </div>
-                                            <!-- MNP Expiration Alert if reserved -->
-                                            @if ($line->status === 'reserved' && $line->mnp_reservation_number)
-                                                <div class="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold {{ $line->mnp_days_remaining <= 3 ? 'bg-red-50 text-red-700 border border-red-200 animate-pulse' : 'bg-amber-50 text-amber-800 border border-amber-200' }}">
-                                                    <span class="material-symbols-outlined text-[12px]">timer</span>
-                                                    <span>MNP残 {{ $line->mnp_days_remaining }}日 ({{ $line->mnp_reservation_number }})</span>
-                                                </div>
-                                            @endif
-                                        </td>
-
-                                        <!-- Carrier & Plan (With Official Brand Colors) -->
-                                        <td class="py-4 sm:py-5 px-4 sm:px-6 whitespace-nowrap">
-                                            <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl font-bold text-xs border shadow-2xs {{ $line->brand_badge_class }}">
-                                                <span class="material-symbols-outlined text-[14px] sm:text-[16px]">signal_cellular_alt</span>
-                                                <span>{{ $line->carrier_name }}</span>
-                                            </div>
-                                            @if ($line->plan_name)
-                                                <div class="text-[11px] sm:text-xs text-[#505f76] mt-1 max-w-[180px] truncate" title="{{ $line->plan_name }}">
-                                                    {{ $line->plan_name }}
-                                                </div>
-                                            @endif
-                                        </td>
-
-                                        <!-- Monthly Fee & Data -->
-                                        <td class="py-4 sm:py-5 px-4 sm:px-6 whitespace-nowrap">
-                                            <div class="flex items-baseline gap-1">
-                                                <span class="text-base sm:text-lg font-black text-[#131b2e]">¥{{ number_format($line->monthly_fee) }}</span>
-                                                <span class="text-[10px] sm:text-xs font-medium text-[#505f76]">/月</span>
-                                            </div>
-                                            <div class="inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md mt-1 border border-indigo-100">
-                                                <span class="material-symbols-outlined text-[13px] sm:text-[14px]">data_usage</span>
-                                                <span>{{ number_format($line->data_capacity, 1) }} GB</span>
-                                            </div>
-                                        </td>
-
-                                        <!-- Contract Holder & Actual User -->
-                                        <td class="py-4 sm:py-5 px-4 sm:px-6 whitespace-nowrap">
-                                            <div class="flex items-center gap-1.5">
-                                                <span class="text-[9px] font-bold text-[#505f76] bg-[#f2f3ff] px-1.5 py-0.5 rounded">名義</span>
-                                                <span class="text-xs font-semibold text-[#131b2e]">{{ $line->contract_holder }}</span>
-                                            </div>
-                                            <div class="flex items-center gap-1.5 mt-1">
-                                                <span class="text-[9px] font-bold text-[#505f76] bg-[#f8fafc] px-1.5 py-0.5 rounded border border-[#e2e8f0]">使用</span>
-                                                <span class="text-xs font-medium text-[#505f76]">{{ $line->actual_user }}</span>
-                                            </div>
-                                        </td>
-
-                                        <!-- Usage Period & Safe Period Meter (短期解約防止メーター) -->
-                                        <td class="py-4 sm:py-5 px-4 sm:px-6 whitespace-nowrap">
-                                            <div class="flex items-center justify-between gap-2">
-                                                <span class="text-xs font-bold text-[#131b2e] flex items-center gap-1">
-                                                    <span class="material-symbols-outlined text-xs sm:text-sm text-[#3525cd]">schedule</span>
-                                                    <span>{{ $line->usage_period_human }}</span>
-                                                </span>
-                                                <span class="text-[10px] sm:text-[11px] font-mono text-[#505f76]">
-                                                    {{ $line->usage_days }}日 / {{ $line->target_safe_period_days }}日
-                                                </span>
-                                            </div>
-                                            <!-- Progress Bar -->
-                                            <div class="w-full h-1.5 sm:h-2 bg-slate-100 rounded-full overflow-hidden mt-1.5 border border-slate-200/60">
-                                                <div class="h-full transition-all duration-500 rounded-full {{ $line->safe_status === 'safe' ? 'bg-emerald-500' : ($line->safe_status === 'caution' ? 'bg-amber-500' : 'bg-rose-500') }}"
-                                                     style="width: {{ $line->safe_period_progress }}%;"></div>
-                                            </div>
-                                            <!-- Safe Status Badge -->
-                                            <div class="mt-1.5 flex items-center justify-between">
-                                                @if ($line->safe_status === 'safe')
-                                                    <span class="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                                                        <span class="material-symbols-outlined text-[11px]">verified</span>
-                                                        <span>安全達成 (転出OK)</span>
-                                                    </span>
-                                                @elseif ($line->safe_status === 'caution')
-                                                    <span class="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                                                        <span class="material-symbols-outlined text-[11px]">warning</span>
-                                                        <span>まもなく安全 (残 {{ $line->safe_period_remaining_days }}日)</span>
-                                                    </span>
-                                                @else
-                                                    <span class="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
-                                                        <span class="material-symbols-outlined text-[11px]">report</span>
-                                                        <span>短期利用中 (残 {{ $line->safe_period_remaining_days }}日)</span>
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        </td>
-
-                                        <!-- Transfer Count Badge (乗り換え回数カウント) -->
-                                        <td class="py-4 sm:py-5 px-4 sm:px-6 text-center whitespace-nowrap">
-                                            @if ($line->transfer_count > 0)
-                                                <button wire:click="openLineHistoryModal({{ $line->id }})" 
-                                                        class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold bg-[#eaedff] text-[#3525cd] hover:bg-[#d0e1fb] border border-[#c3c0ff] transition-colors cursor-pointer"
-                                                        title="過去の乗り換え履歴を確認">
-                                                    <span class="material-symbols-outlined text-[14px]">sync_saved_locally</span>
-                                                    <span>乗り換え {{ $line->transfer_count }}回</span>
-                                                </button>
-                                            @else
-                                                <span class="text-xs text-[#777587] font-medium">新規回線</span>
-                                            @endif
-                                        </td>
-
-                                        <!-- Network PIN (Masking & Toggle) -->
-                                        <td class="py-4 sm:py-5 px-4 sm:px-6 whitespace-nowrap">
-                                            <div class="inline-flex items-center gap-2 bg-[#f8fafc] px-3 py-1 sm:py-1.5 rounded-xl border border-[#e2e8f0]">
-                                                <span class="material-symbols-outlined text-sm text-[#777587]">lock</span>
-                                                @if (!empty($line->network_pin))
-                                                    <span class="font-mono text-xs font-black tracking-widest {{ ($showPins[$line->id] ?? false) ? 'text-[#3525cd]' : 'text-[#505f76]' }}">
-                                                        {{ ($showPins[$line->id] ?? false) ? $line->network_pin : '••••' }}
-                                                    </span>
-                                                    <button wire:click="togglePin({{ $line->id }})" 
-                                                            class="text-[#777587] hover:text-[#3525cd] transition-colors p-0.5 rounded-lg cursor-pointer">
-                                                        <span class="material-symbols-outlined text-[16px]">
-                                                            {{ ($showPins[$line->id] ?? false) ? 'visibility_off' : 'visibility' }}
-                                                        </span>
-                                                    </button>
-                                                @else
-                                                    <span class="text-xs text-[#777587] italic">未設定</span>
-                                                @endif
-                                            </div>
-                                        </td>
-
-                                        <!-- Status -->
-                                        <td class="py-4 sm:py-5 px-4 sm:px-6 text-center whitespace-nowrap">
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap {{ $line->status_badge_class }}">
-                                                {{ $line->status_label }}
-                                            </span>
-                                        </td>
-
-                                        <!-- Actions (編集・削除・乗換) -->
-                                        <td class="py-4 sm:py-5 px-4 sm:px-6 text-right whitespace-nowrap">
-                                            <div class="inline-flex items-center gap-1">
-                                                <a href="{{ route('lines.create', ['from_line_id' => $line->id]) }}" 
-                                                   class="p-1.5 sm:p-2 text-[#3525cd] hover:bg-[#eaedff] rounded-xl transition-all font-semibold text-xs flex items-center gap-1"
-                                                   title="この回線を他社に乗り換え比較する">
-                                                    <span class="material-symbols-outlined text-[17px]">swap_horiz</span>
-                                                    <span>乗換</span>
-                                                </a>
-                                                <button wire:click="openEditModal({{ $line->id }})" 
-                                                        class="p-1.5 sm:p-2 text-[#505f76] hover:bg-[#f2f3ff] hover:text-[#131b2e] rounded-xl transition-colors cursor-pointer"
-                                                        title="回線情報を編集">
-                                                    <span class="material-symbols-outlined text-[17px]">edit</span>
-                                                </button>
-                                                <button wire:click="confirmDelete({{ $line->id }})" 
-                                                        class="p-1.5 sm:p-2 text-[#ba1a1a] hover:bg-[#ffdad6]/50 rounded-xl transition-colors cursor-pointer"
-                                                        title="回線を削除">
-                                                    <span class="material-symbols-outlined text-[17px]">delete</span>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            @endif
-
-            <!-- VIEW MODE 2: Spacious Grid / Card View (Perfect for Mobile, Tablet, Desktop) -->
-            @if ($viewMode === 'grid')
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                    @foreach ($lines as $line)
-                        <div class="bg-white border border-[#c7c4d8]/40 rounded-3xl p-4 sm:p-6 shadow-xs relative overflow-hidden flex flex-col justify-between gap-4 sm:gap-5 hover:border-[#c3c0ff] hover:shadow-md transition-all">
-                            <!-- Card Header -->
-                            <div class="flex justify-between items-start">
-                                <div class="space-y-1">
-                                    <div class="flex items-center gap-2">
-                                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl font-bold text-xs border shadow-2xs {{ $line->brand_badge_class }}">
-                                            <span class="material-symbols-outlined text-[14px]">signal_cellular_alt</span>
-                                            <span>{{ $line->carrier_name }}</span>
-                                        </div>
-                                        @if ($line->transfer_count > 0)
-                                            <button wire:click="openLineHistoryModal({{ $line->id }})" 
-                                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#eaedff] text-[#3525cd] hover:bg-[#d0e1fb] border border-[#c3c0ff] transition-colors cursor-pointer">
-                                                <span>乗り換え {{ $line->transfer_count }}回</span>
-                                            </button>
-                                        @endif
+            <!-- 1. Mobile Dedicated View (md:hidden: 横スクロール完全ゼロのスマホ最適化カードリスト) -->
+            <div class="space-y-4 md:hidden">
+                @foreach ($lines as $line)
+                    <div class="bg-white border border-[#c7c4d8]/40 rounded-3xl p-4 shadow-xs relative overflow-hidden flex flex-col justify-between gap-3.5 hover:border-[#c3c0ff] transition-all">
+                        <!-- Top: Carrier Badge, Line Name, Status -->
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-bold text-[11px] border shadow-2xs {{ $line->brand_badge_class }}">
+                                        <span class="material-symbols-outlined text-[13px]">signal_cellular_alt</span>
+                                        <span>{{ $line->carrier_name }}</span>
                                     </div>
-                                    <h3 class="font-bold text-sm sm:text-base text-[#131b2e] mt-1">{{ $line->line_name }}</h3>
-                                    <p class="text-xs text-[#505f76] font-mono tracking-wide">{{ $line->phone_number ?? '番号未登録' }}</p>
-                                </div>
-                                <span class="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap {{ $line->status_badge_class }}">
-                                    {{ $line->status_label }}
-                                </span>
-                            </div>
-
-                            @if ($line->plan_name)
-                                <div class="bg-[#faf8ff] px-3 py-1.5 rounded-xl text-xs text-[#505f76] border border-[#dae2fd]/50">
-                                    プラン: <span class="font-semibold text-[#131b2e]">{{ $line->plan_name }}</span>
-                                </div>
-                            @endif
-
-                            <!-- Metrics Grid -->
-                            <div class="grid grid-cols-2 gap-3 sm:gap-4 py-2.5 sm:py-3 border-y border-[#c7c4d8]/20 text-xs">
-                                <div>
-                                    <p class="text-[10px] text-[#777587] font-bold uppercase tracking-wider">月額料金</p>
-                                    <div class="flex items-baseline gap-1 mt-0.5">
-                                        <span class="text-lg sm:text-xl font-black text-[#131b2e]">¥{{ number_format($line->monthly_fee) }}</span>
-                                        <span class="text-[10px] text-[#505f76]">/月</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] text-[#777587] font-bold uppercase tracking-wider">データ容量</p>
-                                    <div class="flex items-baseline gap-1 mt-0.5">
-                                        <span class="text-lg sm:text-xl font-black text-indigo-600">{{ number_format($line->data_capacity, 1) }}</span>
-                                        <span class="text-xs font-bold text-[#505f76]">GB</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] text-[#777587] font-bold uppercase tracking-wider">利用期間</p>
-                                    <p class="font-bold text-xs text-[#131b2e] mt-1">{{ $line->usage_period_human }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] text-[#777587] font-bold uppercase tracking-wider">名義 / 使用者</p>
-                                    <p class="font-medium text-xs text-[#131b2e] mt-1 truncate" title="{{ $line->contract_holder }} / {{ $line->actual_user }}">
-                                        {{ $line->contract_holder }} / {{ $line->actual_user }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Safe Period Meter on Card -->
-                            <div class="bg-[#faf8ff] p-3 rounded-2xl border border-[#dae2fd]/60 space-y-1.5">
-                                <div class="flex justify-between items-center text-xs">
-                                    <span class="text-[11px] font-bold text-[#505f76]">短期解約防止安全期間</span>
-                                    <span class="font-mono text-[11px] font-bold text-[#131b2e]">{{ $line->usage_days }}日 / {{ $line->target_safe_period_days }}日</span>
-                                </div>
-                                <div class="w-full h-2 bg-slate-200/70 rounded-full overflow-hidden">
-                                    <div class="h-full rounded-full transition-all duration-500 {{ $line->safe_status === 'safe' ? 'bg-emerald-500' : ($line->safe_status === 'caution' ? 'bg-amber-500' : 'bg-rose-500') }}"
-                                         style="width: {{ $line->safe_period_progress }}%;"></div>
-                                </div>
-                                <div class="flex justify-between items-center pt-0.5">
-                                    @if ($line->safe_status === 'safe')
-                                        <span class="text-[10px] font-bold text-emerald-700">安全達成 (解約・転出OK)</span>
-                                    @elseif ($line->safe_status === 'caution')
-                                        <span class="text-[10px] font-bold text-amber-800">まもなく安全 (残り {{ $line->safe_period_remaining_days }}日)</span>
-                                    @else
-                                        <span class="text-[10px] font-bold text-rose-700">短期利用中 (残り {{ $line->safe_period_remaining_days }}日)</span>
-                                    @endif
-                                    <span class="text-[10px] text-[#777587] font-bold">{{ $line->safe_period_progress }}%</span>
-                                </div>
-                            </div>
-
-                            <!-- PIN & Actions (Responsive Layout) -->
-                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
-                                <div class="flex items-center gap-2 bg-[#f8fafc] px-3 py-1.5 rounded-xl border border-[#e2e8f0]">
-                                    <span class="text-[10px] text-[#777587] font-bold">PIN:</span>
-                                    @if (!empty($line->network_pin))
-                                        <span class="font-mono text-xs font-black tracking-widest text-[#3525cd]">
-                                            {{ ($showPins[$line->id] ?? false) ? $line->network_pin : '••••' }}
-                                        </span>
-                                        <button wire:click="togglePin({{ $line->id }})" class="text-[#777587] hover:text-[#3525cd] p-0.5 cursor-pointer">
-                                            <span class="material-symbols-outlined text-[16px]">
-                                                {{ ($showPins[$line->id] ?? false) ? 'visibility_off' : 'visibility' }}
-                                            </span>
+                                    @if ($line->transfer_count > 0)
+                                        <button wire:click="openLineHistoryModal({{ $line->id }})" 
+                                                class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#eaedff] text-[#3525cd] border border-[#c3c0ff] cursor-pointer">
+                                            <span>乗換 {{ $line->transfer_count }}回</span>
                                         </button>
-                                    @else
-                                        <span class="text-xs text-[#777587] italic">未設定</span>
                                     @endif
                                 </div>
+                                <h3 class="font-bold text-sm text-[#131b2e]">{{ $line->line_name }}</h3>
+                                <p class="text-[11px] text-[#505f76] font-mono">{{ $line->phone_number ?? '番号未登録' }}</p>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap {{ $line->status_badge_class }}">
+                                {{ $line->status_label }}
+                            </span>
+                        </div>
 
-                                <div class="flex items-center justify-end gap-1.5">
-                                    <a href="{{ route('lines.create', ['from_line_id' => $line->id]) }}" 
-                                       class="px-3 py-1.5 text-[#3525cd] bg-[#eaedff] hover:bg-[#d0e1fb] rounded-xl font-bold text-xs flex items-center gap-1 transition-colors"
-                                       title="乗り換え比較">
-                                        <span class="material-symbols-outlined text-[16px]">swap_horiz</span>
-                                        <span>乗換</span>
-                                    </a>
-                                    <button wire:click="openEditModal({{ $line->id }})" 
-                                            class="p-2 text-[#505f76] hover:bg-[#f2f3ff] rounded-xl transition-colors cursor-pointer"
-                                            title="回線情報を編集">
-                                        <span class="material-symbols-outlined text-[18px]">edit</span>
-                                    </button>
-                                    <button wire:click="confirmDelete({{ $line->id }})" 
-                                            class="p-2 text-[#ba1a1a] hover:bg-[#ffdad6]/50 rounded-xl transition-colors cursor-pointer"
-                                            title="回線を削除">
-                                        <span class="material-symbols-outlined text-[18px]">delete</span>
-                                    </button>
+                        @if ($line->plan_name)
+                            <div class="bg-[#faf8ff] px-2.5 py-1 rounded-xl text-[11px] text-[#505f76] border border-[#dae2fd]/50">
+                                プラン: <span class="font-semibold text-[#131b2e]">{{ $line->plan_name }}</span>
+                            </div>
+                        @endif
+
+                        <!-- Metrics Grid -->
+                        <div class="grid grid-cols-2 gap-2.5 py-2 border-y border-[#c7c4d8]/20 text-xs">
+                            <div>
+                                <span class="text-[10px] text-[#777587] font-bold uppercase">月額料金</span>
+                                <div class="flex items-baseline gap-0.5 mt-0.5">
+                                    <span class="text-lg font-black text-[#131b2e]">¥{{ number_format($line->monthly_fee) }}</span>
+                                    <span class="text-[10px] text-[#505f76]">/月</span>
                                 </div>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-[#777587] font-bold uppercase">通信容量</span>
+                                <div class="flex items-baseline gap-0.5 mt-0.5">
+                                    <span class="text-lg font-black text-indigo-600">{{ number_format($line->data_capacity, 1) }}</span>
+                                    <span class="text-[10px] font-bold text-[#505f76]">GB</span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-[#777587] font-bold uppercase">利用期間</span>
+                                <p class="font-bold text-[11px] text-[#131b2e] mt-0.5">{{ $line->usage_period_human }}</p>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-[#777587] font-bold uppercase">名義 / 使用者</span>
+                                <p class="font-medium text-[11px] text-[#131b2e] mt-0.5 truncate">{{ $line->contract_holder }} / {{ $line->actual_user }}</p>
                             </div>
                         </div>
-                    @endforeach
-                </div>
-            @endif
+
+                        <!-- Safe Period Meter -->
+                        <div class="bg-[#faf8ff] p-2.5 rounded-2xl border border-[#dae2fd]/60 space-y-1">
+                            <div class="flex justify-between items-center text-[11px]">
+                                <span class="font-bold text-[#505f76]">安全維持期間</span>
+                                <span class="font-mono font-bold text-[#131b2e]">{{ $line->usage_days }}日 / {{ $line->target_safe_period_days }}日</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-500 {{ $line->safe_status === 'safe' ? 'bg-emerald-500' : ($line->safe_status === 'caution' ? 'bg-amber-500' : 'bg-rose-500') }}"
+                                     style="width: {{ $line->safe_period_progress }}%;"></div>
+                            </div>
+                            <div class="flex justify-between items-center pt-0.5 text-[10px]">
+                                @if ($line->safe_status === 'safe')
+                                    <span class="font-bold text-emerald-700">安全達成 (転出OK)</span>
+                                @elseif ($line->safe_status === 'caution')
+                                    <span class="font-bold text-amber-800">まもなく安全 (残 {{ $line->safe_period_remaining_days }}日)</span>
+                                @else
+                                    <span class="font-bold text-rose-700">短期利用中 (残 {{ $line->safe_period_remaining_days }}日)</span>
+                                @endif
+                                <span class="text-[#777587] font-bold">{{ $line->safe_period_progress }}%</span>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Row: PIN & Action Buttons -->
+                        <div class="flex items-center justify-between gap-2 pt-1">
+                            <div class="flex items-center gap-1.5 bg-[#f8fafc] px-2.5 py-1 rounded-xl border border-[#e2e8f0]">
+                                <span class="text-[10px] text-[#777587] font-bold">PIN:</span>
+                                @if (!empty($line->network_pin))
+                                    <span class="font-mono text-xs font-black tracking-widest text-[#3525cd]">
+                                        {{ ($showPins[$line->id] ?? false) ? $line->network_pin : '••••' }}
+                                    </span>
+                                    <button wire:click="togglePin({{ $line->id }})" class="text-[#777587] hover:text-[#3525cd] p-0.5 cursor-pointer">
+                                        <span class="material-symbols-outlined text-[15px]">
+                                            {{ ($showPins[$line->id] ?? false) ? 'visibility_off' : 'visibility' }}
+                                        </span>
+                                    </button>
+                                @else
+                                    <span class="text-[11px] text-[#777587] italic">未設定</span>
+                                @endif
+                            </div>
+
+                            <div class="flex items-center gap-1">
+                                <a href="{{ route('lines.create', ['from_line_id' => $line->id]) }}" 
+                                   class="px-2.5 py-1 text-[#3525cd] bg-[#eaedff] hover:bg-[#d0e1fb] rounded-xl font-bold text-xs flex items-center gap-0.5 transition-colors">
+                                    <span class="material-symbols-outlined text-[15px]">swap_horiz</span>
+                                    <span>乗換</span>
+                                </a>
+                                <button wire:click="openEditModal({{ $line->id }})" 
+                                        class="p-1.5 text-[#505f76] hover:bg-[#f2f3ff] rounded-xl transition-colors cursor-pointer"
+                                        title="回線情報を編集">
+                                    <span class="material-symbols-outlined text-[17px]">edit</span>
+                                </button>
+                                <button wire:click="confirmDelete({{ $line->id }})" 
+                                        class="p-1.5 text-[#ba1a1a] hover:bg-[#ffdad6]/50 rounded-xl transition-colors cursor-pointer"
+                                        title="回線を削除">
+                                    <span class="material-symbols-outlined text-[17px]">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- 2. Desktop & Tablet View (hidden md:block: ユーザーのモード選択に応じてテーブル / グリッド表示) -->
+            <div class="hidden md:block">
+                @if ($viewMode === 'table')
+                    <div class="bg-white border border-[#c7c4d8]/40 rounded-3xl shadow-xs overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[1000px] sm:min-w-[1100px] lg:min-w-[1200px]">
+                                <thead>
+                                    <tr class="border-b border-[#c7c4d8]/30 bg-[#faf8ff] text-[11px] font-bold text-[#505f76] uppercase tracking-wider">
+                                        <th class="py-4 px-6">回線名・電話番号</th>
+                                        <th class="py-4 px-6">携帯会社 / プラン</th>
+                                        <th class="py-4 px-6">月額料金 / 容量</th>
+                                        <th class="py-4 px-6">契約名義人 / 使用者</th>
+                                        <th class="py-4 px-6">利用期間 & 安全維持メーター</th>
+                                        <th class="py-4 px-6 text-center">乗り換え歴</th>
+                                        <th class="py-4 px-6">暗証番号 (PIN)</th>
+                                        <th class="py-4 px-6 text-center">状態</th>
+                                        <th class="py-4 px-6 text-right">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-[#c7c4d8]/20 text-xs sm:text-sm">
+                                    @foreach ($lines as $line)
+                                        <tr class="hover:bg-[#f8faff] transition-colors group">
+                                            <!-- Line Name & Phone -->
+                                            <td class="py-5 px-6 whitespace-nowrap">
+                                                <div class="font-bold text-sm text-[#131b2e] group-hover:text-[#3525cd] transition-colors">
+                                                    {{ $line->line_name }}
+                                                </div>
+                                                <div class="text-xs text-[#505f76] font-mono tracking-wider mt-1 flex items-center gap-1.5">
+                                                    <span class="material-symbols-outlined text-[15px] text-[#777587]">call</span>
+                                                    <span>{{ $line->phone_number ?? '番号未登録' }}</span>
+                                                </div>
+                                                @if ($line->status === 'reserved' && $line->mnp_reservation_number)
+                                                    <div class="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold {{ $line->mnp_days_remaining <= 3 ? 'bg-red-50 text-red-700 border border-red-200 animate-pulse' : 'bg-amber-50 text-amber-800 border border-amber-200' }}">
+                                                        <span class="material-symbols-outlined text-[12px]">timer</span>
+                                                        <span>MNP残 {{ $line->mnp_days_remaining }}日 ({{ $line->mnp_reservation_number }})</span>
+                                                    </div>
+                                                @endif
+                                            </td>
+
+                                            <!-- Carrier & Plan -->
+                                            <td class="py-5 px-6 whitespace-nowrap">
+                                                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-bold text-xs border shadow-2xs {{ $line->brand_badge_class }}">
+                                                    <span class="material-symbols-outlined text-[16px]">signal_cellular_alt</span>
+                                                    <span>{{ $line->carrier_name }}</span>
+                                                </div>
+                                                @if ($line->plan_name)
+                                                    <div class="text-xs text-[#505f76] mt-1 max-w-[180px] truncate" title="{{ $line->plan_name }}">
+                                                        {{ $line->plan_name }}
+                                                    </div>
+                                                @endif
+                                            </td>
+
+                                            <!-- Monthly Fee & Data -->
+                                            <td class="py-5 px-6 whitespace-nowrap">
+                                                <div class="flex items-baseline gap-1">
+                                                    <span class="text-lg font-black text-[#131b2e]">¥{{ number_format($line->monthly_fee) }}</span>
+                                                    <span class="text-xs font-medium text-[#505f76]">/月</span>
+                                                </div>
+                                                <div class="inline-flex items-center gap-1 text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md mt-1 border border-indigo-100">
+                                                    <span class="material-symbols-outlined text-[14px]">data_usage</span>
+                                                    <span>{{ number_format($line->data_capacity, 1) }} GB</span>
+                                                </div>
+                                            </td>
+
+                                            <!-- Contract Holder & Actual User -->
+                                            <td class="py-5 px-6 whitespace-nowrap">
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="text-[9px] font-bold text-[#505f76] bg-[#f2f3ff] px-1.5 py-0.5 rounded">名義</span>
+                                                    <span class="text-xs font-semibold text-[#131b2e]">{{ $line->contract_holder }}</span>
+                                                </div>
+                                                <div class="flex items-center gap-1.5 mt-1">
+                                                    <span class="text-[9px] font-bold text-[#505f76] bg-[#f8fafc] px-1.5 py-0.5 rounded border border-[#e2e8f0]">使用</span>
+                                                    <span class="text-xs font-medium text-[#505f76]">{{ $line->actual_user }}</span>
+                                                </div>
+                                            </td>
+
+                                            <!-- Usage Period & Safe Period Meter -->
+                                            <td class="py-5 px-6 whitespace-nowrap">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-xs font-bold text-[#131b2e] flex items-center gap-1">
+                                                        <span class="material-symbols-outlined text-sm text-[#3525cd]">schedule</span>
+                                                        <span>{{ $line->usage_period_human }}</span>
+                                                    </span>
+                                                    <span class="text-[11px] font-mono text-[#505f76]">
+                                                        {{ $line->usage_days }}日 / {{ $line->target_safe_period_days }}日
+                                                    </span>
+                                                </div>
+                                                <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden mt-1.5 border border-slate-200/60">
+                                                    <div class="h-full transition-all duration-500 rounded-full {{ $line->safe_status === 'safe' ? 'bg-emerald-500' : ($line->safe_status === 'caution' ? 'bg-amber-500' : 'bg-rose-500') }}"
+                                                         style="width: {{ $line->safe_period_progress }}%;"></div>
+                                                </div>
+                                                <div class="mt-1.5 flex items-center justify-between">
+                                                    @if ($line->safe_status === 'safe')
+                                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                                            <span class="material-symbols-outlined text-[11px]">verified</span>
+                                                            <span>安全達成 (転出OK)</span>
+                                                        </span>
+                                                    @elseif ($line->safe_status === 'caution')
+                                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                                            <span class="material-symbols-outlined text-[11px]">warning</span>
+                                                            <span>まもなく安全 (残 {{ $line->safe_period_remaining_days }}日)</span>
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                                                            <span class="material-symbols-outlined text-[11px]">report</span>
+                                                            <span>短期利用中 (残 {{ $line->safe_period_remaining_days }}日)</span>
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </td>
+
+                                            <!-- Transfer Count Badge -->
+                                            <td class="py-5 px-6 text-center whitespace-nowrap">
+                                                @if ($line->transfer_count > 0)
+                                                    <button wire:click="openLineHistoryModal({{ $line->id }})" 
+                                                            class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#eaedff] text-[#3525cd] hover:bg-[#d0e1fb] border border-[#c3c0ff] transition-colors cursor-pointer"
+                                                            title="過去の乗り換え履歴を確認">
+                                                        <span class="material-symbols-outlined text-[14px]">sync_saved_locally</span>
+                                                        <span>乗り換え {{ $line->transfer_count }}回</span>
+                                                    </button>
+                                                @else
+                                                    <span class="text-xs text-[#777587] font-medium">新規回線</span>
+                                                @endif
+                                            </td>
+
+                                            <!-- Network PIN -->
+                                            <td class="py-5 px-6 whitespace-nowrap">
+                                                <div class="inline-flex items-center gap-2 bg-[#f8fafc] px-3 py-1.5 rounded-xl border border-[#e2e8f0]">
+                                                    <span class="material-symbols-outlined text-sm text-[#777587]">lock</span>
+                                                    @if (!empty($line->network_pin))
+                                                        <span class="font-mono text-xs font-black tracking-widest {{ ($showPins[$line->id] ?? false) ? 'text-[#3525cd]' : 'text-[#505f76]' }}">
+                                                            {{ ($showPins[$line->id] ?? false) ? $line->network_pin : '••••' }}
+                                                        </span>
+                                                        <button wire:click="togglePin({{ $line->id }})" 
+                                                                class="text-[#777587] hover:text-[#3525cd] transition-colors p-0.5 rounded-lg cursor-pointer">
+                                                            <span class="material-symbols-outlined text-[16px]">
+                                                                {{ ($showPins[$line->id] ?? false) ? 'visibility_off' : 'visibility' }}
+                                                            </span>
+                                                        </button>
+                                                    @else
+                                                        <span class="text-xs text-[#777587] italic">未設定</span>
+                                                    @endif
+                                                </div>
+                                            </td>
+
+                                            <!-- Status -->
+                                            <td class="py-5 px-6 text-center whitespace-nowrap">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap {{ $line->status_badge_class }}">
+                                                    {{ $line->status_label }}
+                                                </span>
+                                            </td>
+
+                                            <!-- Actions -->
+                                            <td class="py-5 px-6 text-right whitespace-nowrap">
+                                                <div class="inline-flex items-center gap-1">
+                                                    <a href="{{ route('lines.create', ['from_line_id' => $line->id]) }}" 
+                                                       class="p-2 text-[#3525cd] hover:bg-[#eaedff] rounded-xl transition-all font-semibold text-xs flex items-center gap-1"
+                                                       title="この回線を他社に乗り換え比較する">
+                                                        <span class="material-symbols-outlined text-[17px]">swap_horiz</span>
+                                                        <span>乗換</span>
+                                                    </a>
+                                                    <button wire:click="openEditModal({{ $line->id }})" 
+                                                            class="p-2 text-[#505f76] hover:bg-[#f2f3ff] hover:text-[#131b2e] rounded-xl transition-colors cursor-pointer"
+                                                            title="回線情報を編集">
+                                                        <span class="material-symbols-outlined text-[17px]">edit</span>
+                                                    </button>
+                                                    <button wire:click="confirmDelete({{ $line->id }})" 
+                                                            class="p-2 text-[#ba1a1a] hover:bg-[#ffdad6]/50 rounded-xl transition-colors cursor-pointer"
+                                                            title="回線を削除">
+                                                        <span class="material-symbols-outlined text-[17px]">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @else
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        @foreach ($lines as $line)
+                            <div class="bg-white border border-[#c7c4d8]/40 rounded-3xl p-6 shadow-xs relative overflow-hidden flex flex-col justify-between gap-5 hover:border-[#c3c0ff] hover:shadow-md transition-all">
+                                <!-- Card Header -->
+                                <div class="flex justify-between items-start">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-2">
+                                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl font-bold text-xs border shadow-2xs {{ $line->brand_badge_class }}">
+                                                <span class="material-symbols-outlined text-[14px]">signal_cellular_alt</span>
+                                                <span>{{ $line->carrier_name }}</span>
+                                            </div>
+                                            @if ($line->transfer_count > 0)
+                                                <button wire:click="openLineHistoryModal({{ $line->id }})" 
+                                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#eaedff] text-[#3525cd] hover:bg-[#d0e1fb] border border-[#c3c0ff] transition-colors cursor-pointer">
+                                                    <span>乗り換え {{ $line->transfer_count }}回</span>
+                                                </button>
+                                            @endif
+                                        </div>
+                                        <h3 class="font-bold text-base text-[#131b2e] mt-1">{{ $line->line_name }}</h3>
+                                        <p class="text-xs text-[#505f76] font-mono tracking-wide">{{ $line->phone_number ?? '番号未登録' }}</p>
+                                    </div>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap {{ $line->status_badge_class }}">
+                                        {{ $line->status_label }}
+                                    </span>
+                                </div>
+
+                                @if ($line->plan_name)
+                                    <div class="bg-[#faf8ff] px-3 py-1.5 rounded-xl text-xs text-[#505f76] border border-[#dae2fd]/50">
+                                        プラン: <span class="font-semibold text-[#131b2e]">{{ $line->plan_name }}</span>
+                                    </div>
+                                @endif
+
+                                <!-- Metrics Grid -->
+                                <div class="grid grid-cols-2 gap-4 py-3 border-y border-[#c7c4d8]/20 text-xs">
+                                    <div>
+                                        <p class="text-[10px] text-[#777587] font-bold uppercase tracking-wider">月額料金</p>
+                                        <div class="flex items-baseline gap-1 mt-0.5">
+                                            <span class="text-xl font-black text-[#131b2e]">¥{{ number_format($line->monthly_fee) }}</span>
+                                            <span class="text-[10px] text-[#505f76]">/月</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-[#777587] font-bold uppercase tracking-wider">データ容量</p>
+                                        <div class="flex items-baseline gap-1 mt-0.5">
+                                            <span class="text-xl font-black text-indigo-600">{{ number_format($line->data_capacity, 1) }}</span>
+                                            <span class="text-xs font-bold text-[#505f76]">GB</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-[#777587] font-bold uppercase tracking-wider">利用期間</p>
+                                        <p class="font-bold text-xs text-[#131b2e] mt-1">{{ $line->usage_period_human }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-[#777587] font-bold uppercase tracking-wider">名義 / 使用者</p>
+                                        <p class="font-medium text-xs text-[#131b2e] mt-1 truncate" title="{{ $line->contract_holder }} / {{ $line->actual_user }}">
+                                            {{ $line->contract_holder }} / {{ $line->actual_user }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Safe Period Meter on Card -->
+                                <div class="bg-[#faf8ff] p-3 rounded-2xl border border-[#dae2fd]/60 space-y-1.5">
+                                    <div class="flex justify-between items-center text-xs">
+                                        <span class="text-[11px] font-bold text-[#505f76]">短期解約防止安全期間</span>
+                                        <span class="font-mono text-[11px] font-bold text-[#131b2e]">{{ $line->usage_days }}日 / {{ $line->target_safe_period_days }}日</span>
+                                    </div>
+                                    <div class="w-full h-2 bg-slate-200/70 rounded-full overflow-hidden">
+                                        <div class="h-full rounded-full transition-all duration-500 {{ $line->safe_status === 'safe' ? 'bg-emerald-500' : ($line->safe_status === 'caution' ? 'bg-amber-500' : 'bg-rose-500') }}"
+                                             style="width: {{ $line->safe_period_progress }}%;"></div>
+                                    </div>
+                                    <div class="flex justify-between items-center pt-0.5">
+                                        @if ($line->safe_status === 'safe')
+                                            <span class="text-[10px] font-bold text-emerald-700">安全達成 (解約・転出OK)</span>
+                                        @elseif ($line->safe_status === 'caution')
+                                            <span class="text-[10px] font-bold text-amber-800">まもなく安全 (残り {{ $line->safe_period_remaining_days }}日)</span>
+                                        @else
+                                            <span class="text-[10px] font-bold text-rose-700">短期利用中 (残り {{ $line->safe_period_remaining_days }}日)</span>
+                                        @endif
+                                        <span class="text-[10px] text-[#777587] font-bold">{{ $line->safe_period_progress }}%</span>
+                                    </div>
+                                </div>
+
+                                <!-- PIN & Actions -->
+                                <div class="flex items-center justify-between gap-2.5 pt-1">
+                                    <div class="flex items-center gap-2 bg-[#f8fafc] px-3 py-1.5 rounded-xl border border-[#e2e8f0]">
+                                        <span class="text-[10px] text-[#777587] font-bold">PIN:</span>
+                                        @if (!empty($line->network_pin))
+                                            <span class="font-mono text-xs font-black tracking-widest text-[#3525cd]">
+                                                {{ ($showPins[$line->id] ?? false) ? $line->network_pin : '••••' }}
+                                            </span>
+                                            <button wire:click="togglePin({{ $line->id }})" class="text-[#777587] hover:text-[#3525cd] p-0.5 cursor-pointer">
+                                                <span class="material-symbols-outlined text-[16px]">
+                                                    {{ ($showPins[$line->id] ?? false) ? 'visibility_off' : 'visibility' }}
+                                                </span>
+                                            </button>
+                                        @else
+                                            <span class="text-xs text-[#777587] italic">未設定</span>
+                                        @endif
+                                    </div>
+
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <a href="{{ route('lines.create', ['from_line_id' => $line->id]) }}" 
+                                           class="px-3 py-1.5 text-[#3525cd] bg-[#eaedff] hover:bg-[#d0e1fb] rounded-xl font-bold text-xs flex items-center gap-1 transition-colors"
+                                           title="乗り換え比較">
+                                            <span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+                                            <span>乗換</span>
+                                        </a>
+                                        <button wire:click="openEditModal({{ $line->id }})" 
+                                                class="p-2 text-[#505f76] hover:bg-[#f2f3ff] rounded-xl transition-colors cursor-pointer"
+                                                title="回線情報を編集">
+                                            <span class="material-symbols-outlined text-[18px]">edit</span>
+                                        </button>
+                                        <button wire:click="confirmDelete({{ $line->id }})" 
+                                                class="p-2 text-[#ba1a1a] hover:bg-[#ffdad6]/50 rounded-xl transition-colors cursor-pointer"
+                                                title="回線を削除">
+                                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
         @endif
     </div>
 

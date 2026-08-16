@@ -53,21 +53,18 @@
       class="min-h-screen relative bg-[#faf8ff] text-[#131b2e] font-sans antialiased flex flex-col md:flex-row">
 
     <!-- Mobile Top Header (md:hidden) -->
-    <header class="fixed top-0 left-0 w-full z-40 flex justify-between items-center px-4 h-14 bg-white/90 backdrop-blur-md border-b border-[#c7c4d8]/40 shadow-xs md:hidden">
-        <div class="flex items-center gap-2.5">
-            <button @click="mobileOpen = true" class="p-1.5 rounded-xl text-[#3525cd] hover:bg-[#eaedff] transition-colors cursor-pointer" aria-label="メニューを開く">
+    <header class="fixed top-0 left-0 w-full z-40 flex justify-between items-center px-4 h-14 bg-white/95 backdrop-blur-md border-b border-[#c7c4d8]/40 shadow-xs md:hidden">
+        <div class="flex items-center gap-2">
+            <button @click="mobileOpen = true" class="p-2 -ml-1.5 rounded-xl text-[#3525cd] hover:bg-[#eaedff] transition-colors cursor-pointer flex items-center justify-center" aria-label="ナビゲーションメニューを開く">
                 <span class="material-symbols-outlined text-2xl">menu</span>
             </button>
-            <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#3525cd] to-[#4f46e5] flex items-center justify-center text-white shadow-xs">
-                    <span class="material-symbols-outlined text-base">phonelink_setup</span>
-                </div>
-                <span class="text-sm font-black text-[#3525cd] tracking-tight">ContractFlow</span>
-            </a>
+            <span class="text-sm font-bold text-[#131b2e] tracking-tight">
+                {{ request()->routeIs('dashboard') ? 'ダッシュボード' : (request()->routeIs('lines.create') ? '回線登録・乗換' : '乗り換え履歴') }}
+            </span>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ route('lines.create') }}" class="inline-flex items-center gap-1 bg-[#3525cd] text-white text-xs font-bold px-2.5 py-1.5 rounded-xl shadow-xs" title="新規登録">
-                <span class="material-symbols-outlined text-[17px]">add</span>
+            <a href="{{ route('lines.create') }}" class="inline-flex items-center gap-1 bg-[#3525cd] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs active:scale-95 transition-transform" title="新規登録">
+                <span class="material-symbols-outlined text-[16px]">add</span>
                 <span>回線追加</span>
             </a>
             <div class="w-7 h-7 rounded-full bg-[#dae2fd] text-[#3525cd] font-bold text-xs flex items-center justify-center border border-[#c3c0ff]"
