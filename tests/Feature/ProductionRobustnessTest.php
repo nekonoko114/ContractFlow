@@ -12,6 +12,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -173,7 +174,7 @@ class ProductionRobustnessTest extends TestCase
         $this->assertEquals('7890', $line->network_pin);
 
         // DB直接クエリ（Raw Query）では平文 '7890' ではなく暗号化文字列であること
-        $rawLine = \DB::table('lines')->where('id', $line->id)->first();
+        $rawLine = DB::table('lines')->where('id', $line->id)->first();
         $this->assertNotEquals('7890', $rawLine->network_pin);
         $this->assertStringContainsString('eyJ', $rawLine->network_pin); // Laravel Encrypt payload
     }
