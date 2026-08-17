@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Composer Dependencies
@@ -37,33 +37,58 @@ jobs:
           npm ci
           npm run build
 
-      - name: Prepare Files for Deployment
-        run: |
-          # デプロイに不要なテストファイルや開発用キャッシュを削除
-          rm -rf tests
-          rm -rf node_modules
-          rm -rf .github
-
-      - name: Deploy to Lolipop via SSH / rsync
-        uses: easingthemes/ssh-deploy@v5.0.3
-        with:
+      - name: Deploy via Rsync over SSH
+        env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          REMOTE_HOST: ${{ secrets.SSH_HOST }}
-          REMOTE_USER: ${{ secrets.SSH_USERNAME }}
-          REMOTE_PORT: ${{ secrets.SSH_PORT || '2222' }}
-          TARGET: ${{ secrets.DEPLOY_PATH }}
-          EXCLUDE: "/.git/, /.github/, /node_modules/, /storage/logs/*, /storage/framework/cache/data/*, /storage/framework/sessions/*, /storage/framework/views/*, /.env"
-          ARGS: "-rlgoDzvc -i --delete"
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          # 秘密鍵の配置とパーミッション設定
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          # Secrets の余分な空白や改行を自動サニタイズ
+          HOST=$(echo "$SSH_HOST" | tr -d '[:space:]')
+          USER=$(echo "$SSH_USERNAME" | tr -d '[:space:]')
+          PORT=$(echo "${SSH_PORT:-2222}" | tr -d '[:space:]')
+          TARGET=$(echo "$DEPLOY_PATH" | tr -d '[:space:]')
+
+          echo "Connecting to $USER@$HOST:$PORT..."
+
+          # known_hosts に追加
+          ssh-keyscan -p "$PORT" -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          # Rsync でファイル転送（不要なファイルを除外して安全に同期）
+          rsync -avz --delete \
+            -e "ssh -p $PORT -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            --exclude="/.git/" \
+            --exclude="/.github/" \
+            --exclude="/node_modules/" \
+            --exclude="/tests/" \
+            --exclude="/storage/logs/*" \
+            --exclude="/storage/framework/cache/data/*" \
+            --exclude="/storage/framework/sessions/*" \
+            --exclude="/storage/framework/views/*" \
+            --exclude="/.env" \
+            ./ "$USER@$HOST:$TARGET/"
 
       - name: Run Post-Deployment Commands on Lolipop
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || 2222 }}
-          script: |
-            cd ${{ secrets.DEPLOY_PATH }}
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          HOST=$(echo "$SSH_HOST" | tr -d '[:space:]')
+          USER=$(echo "$SSH_USERNAME" | tr -d '[:space:]')
+          PORT=$(echo "${SSH_PORT:-2222}" | tr -d '[:space:]')
+          TARGET=$(echo "$DEPLOY_PATH" | tr -d '[:space:]')
+
+          ssh -p "$PORT" -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$USER@$HOST" << 'EOF'
+            cd "$TARGET" 2>/dev/null || cd ~/web/contractflow
             
             # PHP バイナリの自動検出
             if [ -f /usr/local/php/8.4/bin/php ]; then
@@ -73,6 +98,8 @@ jobs:
             else
               PHP_BIN="php"
             fi
+            
+            echo "Using PHP binary: $($PHP_BIN -v | head -n 1)"
             
             # パーミッション設定
             chmod -R 777 storage bootstrap/cache
@@ -88,3 +115,6 @@ jobs:
             $PHP_BIN -d memory_limit=512M artisan config:cache
             $PHP_BIN -d memory_limit=512M artisan route:cache
             $PHP_BIN -d memory_limit=512M artisan view:cache
+            
+            echo "Deployment successfully finished."
+          EOF
