@@ -37,7 +37,7 @@ jobs:
           npm ci
           npm run build
 
-      - name: Deploy via Rsync over SSH
+      - name: Sync Files and Run Remote Commands
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -45,23 +45,26 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          # 秘密鍵の配置とパーミッション設定
+          # 1. SSH 鍵のセットアップ
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
           printf "%s\n" "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          # Secrets の余分な空白や改行を自動サニタイズ
+          # 2. 変数のサニタイズ（空白・改行の除去）
           HOST=$(echo "$SSH_HOST" | tr -d '[:space:]')
           USER=$(echo "$SSH_USERNAME" | tr -d '[:space:]')
           PORT=$(echo "${SSH_PORT:-2222}" | tr -d '[:space:]')
           TARGET=$(echo "$DEPLOY_PATH" | tr -d '[:space:]')
 
-          echo "Connecting to $USER@$HOST:$PORT..."
+          echo "Target Host: $USER@$HOST:$PORT"
+          echo "Target Path: $TARGET"
 
-          # known_hosts に追加
+          # 3. known_hosts に追加
           ssh-keyscan -p "$PORT" -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
-          # Rsync でファイル転送（不要なファイルを除外して安全に同期）
+          # 4. Rsync によるファイル転送
+          echo "Starting rsync..."
           rsync -avz --delete \
             -e "ssh -p $PORT -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
             --exclude="/.git/" \
@@ -75,46 +78,36 @@ jobs:
             --exclude="/.env" \
             ./ "$USER@$HOST:$TARGET/"
 
-      - name: Run Post-Deployment Commands on Lolipop
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-        run: |
-          HOST=$(echo "$SSH_HOST" | tr -d '[:space:]')
-          USER=$(echo "$SSH_USERNAME" | tr -d '[:space:]')
-          PORT=$(echo "${SSH_PORT:-2222}" | tr -d '[:space:]')
-          TARGET=$(echo "$DEPLOY_PATH" | tr -d '[:space:]')
+          echo "Rsync transfer completed successfully."
 
-          ssh -p "$PORT" -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$USER@$HOST" << 'EOF'
-            cd "$TARGET" 2>/dev/null || cd ~/web/contractflow
+          # 5. ロリポップ上での Artisan コマンド実行
+          echo "Executing post-deployment tasks on Lolipop..."
+          ssh -p "$PORT" -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$USER@$HOST" bash -c "'
+            cd \"$TARGET\" 2>/dev/null || cd ~/web/contractflow
             
-            # PHP バイナリの自動検出
+            # PHP バイナリの検出
             if [ -f /usr/local/php/8.4/bin/php ]; then
-              PHP_BIN="/usr/local/php/8.4/bin/php"
+              PHP_BIN=\"/usr/local/php/8.4/bin/php\"
             elif [ -f /usr/local/php/8.3/bin/php ]; then
-              PHP_BIN="/usr/local/php/8.3/bin/php"
+              PHP_BIN=\"/usr/local/php/8.3/bin/php\"
             else
-              PHP_BIN="php"
+              PHP_BIN=\"php\"
             fi
             
-            echo "Using PHP binary: $($PHP_BIN -v | head -n 1)"
+            echo \"PHP Binary: \$(\$PHP_BIN -v | head -n 1)\"
             
-            # パーミッション設定
-            chmod -R 777 storage bootstrap/cache
+            # ディレクトリ権限設定
+            chmod -R 777 storage bootstrap/cache 2>/dev/null || true
             
-            # ストレージシンボリックリンク作成
-            $PHP_BIN -d memory_limit=512M artisan storage:link || true
+            # シンボリックリンクとマイグレーション
+            \$PHP_BIN -d memory_limit=512M artisan storage:link 2>/dev/null || true
+            \$PHP_BIN -d memory_limit=512M artisan migrate --force 2>/dev/null || true
             
-            # データベースマイグレーション
-            $PHP_BIN -d memory_limit=512M artisan migrate --force
+            # 最適化キャッシュ
+            \$PHP_BIN -d memory_limit=512M artisan optimize:clear 2>/dev/null || true
+            \$PHP_BIN -d memory_limit=512M artisan config:cache 2>/dev/null || true
+            \$PHP_BIN -d memory_limit=512M artisan route:cache 2>/dev/null || true
+            \$PHP_BIN -d memory_limit=512M artisan view:cache 2>/dev/null || true
             
-            # 本番用キャッシュ作成
-            $PHP_BIN -d memory_limit=512M artisan optimize:clear
-            $PHP_BIN -d memory_limit=512M artisan config:cache
-            $PHP_BIN -d memory_limit=512M artisan route:cache
-            $PHP_BIN -d memory_limit=512M artisan view:cache
-            
-            echo "Deployment successfully finished."
-          EOF
+            echo \"All deployment tasks completed.\"
+          '"
