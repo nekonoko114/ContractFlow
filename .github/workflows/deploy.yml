@@ -47,7 +47,7 @@ jobs:
         run: |
           # 秘密鍵の配置とパーミッション設定
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          printf "%s\n" "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
           # Secrets の余分な空白や改行を自動サニタイズ
